@@ -327,6 +327,7 @@ public class EightPuzzleDFS {
 
             // Ambil node paling ATAS tumpukan (yang paling baru dimasukkan = LIFO)
             Node currentNode = openStack.pop();
+            currentNode.setNomor(nomor++); // Nomor urut diberikan saat node diperiksa
 
             // Cetak ke stderr agar log progres tidak tercampur dengan output solusi
             String parentInfo = currentNode.getParent() != null
@@ -349,11 +350,11 @@ public class EightPuzzleDFS {
             // Bukan tujuan -> coba semua 4 arah gerakan dari kondisi ini.
             // PERHATIAN: Di DFS, urutan push mempengaruhi arah yang dijelajahi duluan.
             // Gerakan yang dipush TERAKHIR akan berada di ATAS tumpukan dan diproses duluan.
-            // Urutan di bawah: down dipush terakhir -> down diproses duluan oleh DFS.
-            left(currentNode);
-            up(currentNode);
-            right(currentNode);
+            // Agar diproses dengan urutan left->up->right->down, push dilakukan terbalik.
             down(currentNode);
+            right(currentNode);
+            up(currentNode);
+            left(currentNode);
         }
 
         System.out.println("Solusi tidak ditemukan.");
@@ -378,7 +379,6 @@ public class EightPuzzleDFS {
     private void addNodeToStack(Node node) {
         if (!visitedStates.contains(node.getState())) {
             visitedStates.add(node.getState()); // Tandai kondisi ini sudah pernah dikunjungi
-            node.setNomor(nomor++);             // Beri nomor urut untuk memudahkan tracking
             openStack.push(node);               // Masukkan ke ATAS tumpukan untuk diproses nanti
         }
     }
@@ -399,15 +399,18 @@ public class EightPuzzleDFS {
     // (kondisi awal) ke piring paling atas (kondisi tujuan).
     // -------------------------------------------------------------------------
     private void printPath(Node node) {
-        if (node == null) {
-            return; // Sudah melewati node paling awal, berhenti dan mulbai cetak saat kembali
+        // Kumpulkan semua node dari tujuan ke awal, lalu cetak terbalik
+        java.util.Deque<Node> path = new java.util.ArrayDeque<>();
+        while (node != null) {
+            path.push(node);
+            node = node.getParent();
         }
-        printPath(node.getParent()); // Mundur ke node sebelumnya dulu
-
-        // Setelah rekursi kembali ke sini, baru cetak node ini
-        String langkah = node.getOperator().isEmpty() ? "KONDISI AWAL" : "Geser ke " + node.getOperator();
-        System.out.println("Langkah " + node.getLevel() + ": " + langkah
-                + " -> " + formatPuzzle(node.getState()));
+        while (!path.isEmpty()) {
+            Node n = path.pop();
+            String langkah = n.getOperator().isEmpty() ? "KONDISI AWAL" : "Geser ke " + n.getOperator();
+            System.out.println("Langkah " + n.getLevel() + ": " + langkah
+                    + " -> " + formatPuzzle(n.getState()));
+        }
     }
 
     // Mengubah string puzzle menjadi tampilan yang lebih mudah dibaca.
@@ -419,9 +422,10 @@ public class EightPuzzleDFS {
     public static void main(String[] args) {
         // Ganti nilai di bawah untuk mencoba kondisi awal dan tujuan yang berbeda.
         // Gunakan angka 0-8 masing-masing tepat satu kali. '0' = ruang kosong.
-        String asal = "283164705"; // Kondisi awal puzzle (acak)
         // String tujuan = "123804765"; // Kondisi tujuan yang ingin dicapai
-        String tujuan = "283104765"; // Kondisi tujuan yang ingin dicapai
+        // String tujuan = "283104765"; // Kondisi tujuan yang ingin dicapai
+        String asal = "283164705"; // Kondisi awal puzzle (acak)
+        String tujuan = "830264175"; // Kondisi tujuan yang ingin dicapai
 
         System.out.println("Mencari solusi Eight Puzzle dengan DFS...");
         System.out.println("Kondisi awal  : " + asal.substring(0, 3) + "-" + asal.substring(3, 6) + "-" + asal.substring(6));
